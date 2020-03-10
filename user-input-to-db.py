@@ -173,10 +173,10 @@ def excel_to_tsv(dir, xl_file):
     try:
         xl = pd.ExcelFile(xl_path)
     except OSError:
-        print("Could not open / read Excel file:", xl_file)
+        print(f'Could not open / read Excel file: {xl_file!r}')
         sys.exit()
     else:
-        print(f'Loading {xl_file} into pandas')
+        print(f'Loading {xl_file!r}')
         df = pd.DataFrame()
         columns = None
         for idx, name in enumerate(xl.sheet_names):
