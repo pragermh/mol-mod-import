@@ -48,7 +48,7 @@ def main():
 
     # Locate user input
 
-    dir = './input/'
+    dir = 'input/'
 
     # EXCEL
     # xl_file = 'input.xlsx'
