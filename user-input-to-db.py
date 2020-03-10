@@ -89,7 +89,10 @@ def main():
             port=url.port
         )
         conn.autocommit = False
-
+    except (Exception, psycopg2.OperationalError) as error:
+        print("Could not connect to DB.\npsycopg2 message:", error)
+        sys.exit()
+    try:
         # Start data import
         # DATASET
         print('Inserting dataset.')
@@ -173,7 +176,7 @@ def excel_to_tsv(dir, xl_file):
     try:
         xl = pd.ExcelFile(xl_path)
     except OSError:
-        print(f'Could not open / read Excel file: {xl_file!r}')
+        print(f'Could not open / read Excel file: {xl_file!r}.')
         sys.exit()
     else:
         print(f'Loading {xl_file!r}')
