@@ -170,15 +170,20 @@ def print_tbl(df):
 def excel_to_tsv(dir, xl_file):
     """Writes Excel workbook sheets to tsv files, via pandas df"""
     xl_path = dir + xl_file
-    print(f'Loading {xl_file} into pandas')
-    xl = pd.ExcelFile(xl_path)
-    df = pd.DataFrame()
-    columns = None
-    for idx, name in enumerate(xl.sheet_names):
-        if name in ['event', 'occurrence', 'asv-table', 'emof']:
-            print(f"Saving sheet '{name}' to '{name}.tsv'.")
-            sheet = xl.parse(name)
-            sheet.to_csv(f'{dir}{name}.tsv', sep='\t', index=False, encoding="utf-8")
+    try:
+        xl = pd.ExcelFile(xl_path)
+    except OSError:
+        print("Could not open / read Excel file:", xl_file)
+        sys.exit()
+    else:
+        print(f'Loading {xl_file} into pandas')
+        df = pd.DataFrame()
+        columns = None
+        for idx, name in enumerate(xl.sheet_names):
+            if name in ['event', 'occurrence', 'asv-table', 'emof']:
+                print(f"Saving sheet '{name}' to '{name}.tsv'.")
+                sheet = xl.parse(name)
+                sheet.to_csv(f'{dir}{name}.tsv', sep='\t', index=False, encoding="utf-8")
 
 
 def taxonomy_from_ranks(df):
