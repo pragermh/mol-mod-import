@@ -54,7 +54,7 @@ def main():
     xl_file = 'input-small.xlsx'
 
     # TSVs
-    evt_ggbn_file = 'event.tsv'
+    evt_mixs_file = 'event.tsv'
     occ_asv_file = 'occurrence.tsv'
     emof_file = 'emof.tsv'
     # annot_file = 'annotation.tsv'
@@ -70,8 +70,8 @@ def main():
 
     # Load data into data frames
     # Add encoding arg if using TSV exported from Mac Excel (see intro notes)
-    # e.g: evt_ggbn_df = get_record_df(dir + evt_ggbn_file, 'mac-roman')
-    evt_ggbn_df = get_record_df(dir + evt_ggbn_file)
+    # e.g: evt_mixs_df = get_record_df(dir + evt_mixs_file, 'mac-roman')
+    evt_mixs_df = get_record_df(dir + evt_mixs_file)
     occ_asv_df = get_record_df(dir + occ_asv_file)
     emof_df = get_record_df(dir + emof_file)
     annot_df = get_record_df(dir + annot_file)  # [0: 10]
@@ -104,16 +104,17 @@ def main():
         # SAMPLING EVENTS
         print('Inserting events.')
         # Extract event-cols from larger df
-        evt_df = make_evt_df(evt_ggbn_df, ds_id, cur)
+        evt_df = make_evt_df(evt_mixs_df, ds_id, cur)
+
         # Insert events. Save aliases (from user) and ids (generated) in dict
         evt_alias_dict = insert_events(evt_df, cur)
 
-        # GGBN
-        print('Inserting GGBN.')
-        # Extract ggbn-cols, and add event ids from dict
-        ggbn_df = make_ggbn_df(evt_ggbn_df, evt_alias_dict, cur)
-        # Insert into ggbn tbl
-        insert_ggbn(ggbn_df, cur)
+        # MIXS
+        print('Inserting mixs.')
+        # Extract mixs-cols, and add event ids from dict
+        mixs_df = make_mixs_df(evt_mixs_df, evt_alias_dict, cur)
+        # Insert into mixs tbl
+        insert_mixs(mixs_df, cur)
 
         # eMoF (extended Measurements or Facts)
         print('Inserting eMoF.')
@@ -124,7 +125,7 @@ def main():
         # ASVs / OCCURRENCES
         # Split occ and asv data, and add event ids from dict
         occ_df, asv_df = split_occ_asv_df(occ_asv_df, evt_alias_dict, cur)
-
+        print_tbl(occ_df)
         # Copy df data into asv and occ tbls
         print('Inserting ASVs.')
         # Make empty temp tbl
@@ -136,11 +137,11 @@ def main():
         print('Inserting Occurrences.')
         copy_tbl_from_df('occurrence', occ_df, cur)
 
-        # Add SBDI taxon annotation
-        print('Inserting SBDI taxon annotation.')
-        # (Modify to only affect specified subset of data later!)
-        annot_prep_df = prep_annot_df(annot_df, cur)
-        copy_tbl_from_df('taxon_annotation', annot_prep_df, cur)
+        # # Add SBDI taxon annotation
+        # print('Inserting SBDI taxon annotation.')
+        # # (Modify to only affect specified subset of data later!)
+        # annot_prep_df = prep_annot_df(annot_df, cur)
+        # copy_tbl_from_df('taxon_annotation', annot_prep_df, cur)
 
         # Commit db changes (only if all SQL above worked)
         print('Committing changes to DB.')
@@ -209,11 +210,12 @@ def occ_fr_asv_tbl(src, trg):
     excluding zero-obs.
     '''
     df = pd.read_csv(src, delimiter='\t', header='infer')
-    df = df.melt(['asv_id_alias', 'barcodeSequence', 'kingdom', 'phylum', 'class', 'order', 'family',
+    df = df.melt(['asv_id_alias', 'DNA_sequence', 'kingdom', 'phylum', 'class', 'order', 'family',
                   'genus', 'specificEpithet', 'infraspecificEpithet', 'otu'],
                  var_name='event_id_alias',
                  value_name='organismQuantity')
-    df.columns = [inf.underscore(col_name) for col_name in df.columns]
+    df.columns = [inf.underscore(c) for c in df.columns]
+    df.rename(columns={"dna_sequence": "asv_sequence"})
     df.organism_quantity = df.organism_quantity.astype(int)
     df = df[df.organism_quantity > 0]
     df.to_csv(trg, sep='\t', index=False)
@@ -240,7 +242,9 @@ def get_record_df(file, encoding=None):
         # Replace 'NaN'values with 'None' (will be set to NULL in db)
         df = df.where(pd.notnull(df), None)
         # Translate DwC camelcase to snake_case, if needed
-        df.columns = [inf.underscore(col_name) for col_name in df.columns]
+        df.columns = [inf.underscore(c) for c in df.columns]
+        if 'dna_sequence' in df.columns:
+            df = df.rename(columns={"dna_sequence": "asv_sequence"})
         # print(file)
         # print_tbl(df)
         return(df)
@@ -249,15 +253,15 @@ def get_record_df(file, encoding=None):
 def get_ds_meta():
     '''Will be figured out when data flow USER > BAS-MOL > BIOATLAS is clear
     '''
-    dataset_id_alias = 'SBDI:ASV:Scilifelab:2020:1'
+    dataset_id = 'SMHI:BalticPicoplankton'
     provider_email = 'maria.prager@scilifelab.se'
-    return [dataset_id_alias, provider_email]
+    return [dataset_id, provider_email]
 
 
 def get_tbl_cols(cur, tbl=None):
     '''Returns sorted list of all column names in db'''
     query = "SELECT DISTINCT column_name FROM information_schema.columns \
-             WHERE table_schema = 'admin'"
+             WHERE table_schema = 'public'"
     if tbl:
         query = sql.SQL(query + " AND table_name = {}").format(sql.Placeholder())
     cur.execute(query, [tbl])
@@ -277,7 +281,7 @@ def get_insert_query(tbl, fields, pk):
 
 
 def insert_dataset(ds_meta, cur):
-    meta = {'dataset_id_alias': ds_meta[0],
+    meta = {'dataset_id': ds_meta[0],
             'provider_email': ds_meta[1],
             'insertion_time': dt.datetime.now()}
     query = get_insert_query('dataset', meta.keys(), 'dataset_id')
@@ -295,9 +299,9 @@ def make_evt_df(df, ds_id, cur):
     cols = get_tbl_cols(cur, 'sampling_event')
     # Keep all except two which will be missing from user input
     cols = [c for c in cols if c not in ('event_id', 'dataset_id')]
-    df = df[cols]
-    # Add autogenerated dataset id
-    df.insert(0, 'dataset_id', ds_id)
+    df = df[cols].copy()
+    df['dataset_id'] = ds_id
+    df['event_id'] = df['dataset_id'] + ':' + df['event_id_alias']
     return df
 
 
@@ -319,10 +323,10 @@ def insert_events(df, cur):
     return(alias_id)
 
 
-def make_ggbn_df(df, evt_alias_dict, cur):
-    '''Extracts data for db tbl ggbn from larger 'event-level' df.
+def make_mixs_df(df, evt_alias_dict, cur):
+    '''Extracts data for db tbl mixs from larger 'event-level' df.
     Uses col list from db to save editing time during development'''
-    cols = get_tbl_cols(cur, 'ggbn')
+    cols = get_tbl_cols(cur, 'mixs')
     # Replace event id alias (from user) with event id (generated in insert_events)
     df = df.replace({"event_id_alias": evt_alias_dict})
     df = df.rename(columns={"event_id_alias": "event_id"})
@@ -330,9 +334,9 @@ def make_ggbn_df(df, evt_alias_dict, cur):
     return df
 
 
-def insert_ggbn(df, cur):
-    '''Inserts df data into db tbl ggbn'''
-    query = get_insert_query('ggbn', (list(df)), 'event_id')
+def insert_mixs(df, cur):
+    '''Inserts df data into db tbl mixs'''
+    query = get_insert_query('mixs', (list(df)), 'event_id')
     # Iterate over events = df rows
     for index, row in df.iterrows():
         values = row.to_dict()
@@ -344,11 +348,10 @@ def insert_ggbn(df, cur):
 def prep_emof_df(df, evt_alias_dict, cur):
     '''  '''
     cols = get_tbl_cols(cur, 'emof')
-    # Remove id col which will be missing from user input
-    cols.remove('measurement_id')
     # Replace event id alias (from user) with event id (generated in insert_events)
     df = df.replace({"event_id_alias": evt_alias_dict})
     df = df.rename(columns={"event_id_alias": "event_id"})
+    df['measurement_id'] = df['event_id'] + ':' + df['measurement_type']
     df = df[cols]
     return df
 
@@ -378,14 +381,14 @@ def split_occ_asv_df(df, evt_alias_dict, cur):
     Adds sequence checksums as ASV ids'''
     df = taxonomy_from_ranks(df)
     df = df.replace({"event_id_alias": evt_alias_dict})
-    df = df.rename(columns={"event_id_alias": "event_id", "barcode_sequence": "asv_sequence"})
-
+    df = df.rename(columns={"event_id_alias": "event_id"})
     # Calculate id from md5 checksum
-    df['asv_id'] = df['asv_sequence'].apply(lambda x: md5(x))
+    df['asv_id'] = df['asv_sequence'].apply(lambda x: 'ASV:' + md5(x))
     # Get occ cols from db tbl, but skip id col (missing from user input)
     occ_cols = get_tbl_cols(cur, 'occurrence')
     occ_cols.remove('occurrence_id')
-    occ_df = df[occ_cols]
+    occ_df = df[occ_cols].copy()
+    occ_df['occurrence_id'] = occ_df['event_id'] + ':' + occ_df['asv_id']
     # Repeat for asv tbl
     asv_cols = get_tbl_cols(cur, 'asv')
     asv_df = df[asv_cols]
