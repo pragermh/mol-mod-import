@@ -52,7 +52,6 @@ def main():
     # EXCEL
     # xl_file = 'input.xlsx'
     xl_file = 'input-small.xlsx'
-
     # TSVs
     evt_mixs_file = 'event.tsv'
     occ_asv_file = 'occurrence.tsv'
