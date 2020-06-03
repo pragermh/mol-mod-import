@@ -125,7 +125,6 @@ def main():
         # ASVs / OCCURRENCES
         # Split occ and asv data, and add event ids from dict
         occ_df, asv_df = split_occ_asv_df(occ_asv_df, evt_alias_dict, cur)
-        print_tbl(occ_df)
         # Copy df data into asv and occ tbls
         print('Inserting ASVs.')
         # Make empty temp tbl
@@ -137,11 +136,11 @@ def main():
         print('Inserting Occurrences.')
         copy_tbl_from_df('occurrence', occ_df, cur)
 
-        # # Add SBDI taxon annotation
-        # print('Inserting SBDI taxon annotation.')
-        # # (Modify to only affect specified subset of data later!)
-        # annot_prep_df = prep_annot_df(annot_df, cur)
-        # copy_tbl_from_df('taxon_annotation', annot_prep_df, cur)
+        # Add SBDI taxon annotation
+        print('Inserting SBDI taxon annotation.')
+        # (Modify to only affect specified subset of data later!)
+        annot_prep_df = prep_annot_df(annot_df, cur)
+        copy_tbl_from_df('taxon_annotation', annot_prep_df, cur)
 
         # Commit db changes (only if all SQL above worked)
         print('Committing changes to DB.')
@@ -434,7 +433,7 @@ def prep_annot_df(df, cur):
     Uses some dummy values for now.
     '''
     # cols = get_tbl_cols('taxon_annotation', conn)
-    df['asv_id'] = df['asv_sequence'].apply(lambda x: md5(x))
+    df['asv_id'] = df['asv_sequence'].apply(lambda x: 'ASV:' + md5(x))
     # df = df[cols]
     df['status'] = 'valid'
     df['date_identified'] = '2019-11-01'
