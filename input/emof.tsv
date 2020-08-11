@@ -1,7 +1,0 @@
-event_id_alias	measurementType	measurementTypeID	measurementValue	measurementValueID	measurementUnit	measurementUnitID	measurementAccuracy	measurementDeterminedDate	measurementDeterminedBy	measurementMethod	measurementRemarks
-16S10	temperature		13.8		°C						
-16S11	temperature		13.3		°C						
-16S12	temperature		12.9		°C						
-16S10	salinity		2.21		psu						
-16S11	salinity		2.37		psu						
-16S12	salinity		2.9		psu						
