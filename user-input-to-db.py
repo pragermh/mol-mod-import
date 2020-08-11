@@ -47,7 +47,7 @@ from tabulate import tabulate  # For testing only
 def main():
 
     # Locate user input
-    dir = 'input/large'
+    dir = 'input/large/'
     # dir = 'input/small'
 
     # EXCEL
