@@ -47,17 +47,16 @@ from tabulate import tabulate  # For testing only
 def main():
 
     # Locate user input
-    dir = 'input/'
+    dir = 'input/large'
+    # dir = 'input/small'
 
     # EXCEL
-    # xl_file = 'input.xlsx'
-    xl_file = 'input-small.xlsx'
+    xl_file = 'input.xlsx'
     # TSVs
     evt_mixs_file = 'event.tsv'
     occ_asv_file = 'occurrence.tsv'
     emof_file = 'emof.tsv'
-    # annot_file = 'annotation.tsv'
-    annot_file = 'annotation-small.tsv'
+    annot_file = 'annotation.tsv'
 
     # Get TSVs from EXCEL (or comment out to use TSVs directly)
     excel_to_tsv(dir, xl_file)
