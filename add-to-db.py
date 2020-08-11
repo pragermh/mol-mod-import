@@ -5,16 +5,11 @@ Code for reading ASV data and metadata in Excel sheets or *.tsv files,
 and importing these into corresponding postgreSQL (db) tables,
 via pandas dataframes (df), and some editing.
 
-If present, Excel will overwrite tsv:s,
+If present, Excel sheets will overwrite TSVs,
 and an (asv-by-event) 'asv-table' sheet or tsv will be converted to,
-and overwrite, an (eventid-asvid-count) 'occurrence' dito.
+and overwrite, any (eventid-asvid-count) 'occurrence' dito.
 
 DB changes will only be committed if all inserts succeed.
-
-Includes NO input validation yet.
-
-Data are passed multiple times btw Excel, text and pandas df:s
-(especially if asv-table is present), so room for improvement.
 
 TSVs (manually saved) from Mac Excel have 'mac_roman' encoding, but are detected
 as 'ISO-8859-1'(aka. 'latin_1'), messing up special characters (e.g. °C).
@@ -22,10 +17,6 @@ temp.fix: add argument 'mac-roman' to get_record_df().
 
 Annotation import uses dummy data for some fields,
 until we get real output from DL.
-
-Tables and code for dealing with EML metadata (mostly) removed 200302
-as MS says eml.xml will be generated separately.
-Minor dataset tbl kept for internal use, but unclear how we will get data for that
 '''
 import datetime as dt
 import hashlib
