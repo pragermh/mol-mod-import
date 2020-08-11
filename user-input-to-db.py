@@ -154,7 +154,9 @@ def main():
         # Close db connection
         if(conn):
             conn.close()
-            print("PostgreSQL conn is closed.\n")
+            print("PostgreSQL conn is closed.")
+        print("Deleting any intermediary tsv:s created from xlsx.\n")
+        del_intermed_tsv(dir)
 
 
 def get_env_variable(name):
@@ -443,6 +445,13 @@ def prep_annot_df(df, cur):
     # df['taxonRemarks'] = 'Unite DOI'
     df = df.drop(columns='asv_sequence')
     return df
+
+
+def del_intermed_tsv(dir):
+    filelist = [f for f in os.listdir(dir) if f.endswith(".tsv")]
+    for f in filelist:
+        if f != 'annotation.tsv':
+            os.remove(os.path.join(dir, f))
 
 
 if __name__ == '__main__':
