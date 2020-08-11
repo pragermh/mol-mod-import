@@ -446,6 +446,8 @@ def prep_annot_df(df, cur):
 
 
 def del_intermed_tsv(dir):
+    '''Deletes any intermediary tsv:s created from xlsx input.
+    '''
     filelist = [f for f in os.listdir(dir) if f.endswith(".tsv")]
     for f in filelist:
         if f != 'annotation.tsv':
