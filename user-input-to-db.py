@@ -29,17 +29,17 @@ Minor dataset tbl kept for internal use, but unclear how we will get data for th
 '''
 import datetime as dt
 import hashlib
-from io import StringIO
 import os
-from os import path
 import random  # For testing only
 import sys
+from io import StringIO
+from os import path
 from urllib.parse import urlparse
 
-from chardet import detect
 import inflection as inf
 import pandas as pd
 import psycopg2
+from chardet import detect
 from psycopg2 import sql
 from tabulate import tabulate  # For testing only
 
