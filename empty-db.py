@@ -4,8 +4,9 @@
 Code for deleting all records in ASV db, and restarting sequences at 1.
 '''
 import os
-import psycopg2
 from urllib.parse import urlparse
+
+import psycopg2
 
 
 def main():
