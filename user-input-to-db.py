@@ -182,8 +182,6 @@ def excel_to_tsv(dir, xl_file):
         sys.exit()
     else:
         print(f'Loading {xl_file!r}')
-        df = pd.DataFrame()
-        columns = None
         for idx, name in enumerate(xl.sheet_names):
             if name in ['event', 'occurrence', 'asv-table', 'emof']:
                 print(f"Saving sheet '{name}' to '{name}.tsv'.")
@@ -424,7 +422,7 @@ def copy_tbl_from_df(tbl, df, cur):
     df.to_csv(output, sep='\t', header=False, index=False)
     # Go to top of 'file'
     output.seek(0)
-    contents = output.getvalue()
+    output.getvalue()
     cur.copy_from(output, tbl, columns=list(df))
 
 
