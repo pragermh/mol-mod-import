@@ -4,6 +4,7 @@
 Code for deleting all records in ASV db, and restarting sequences at 1.
 '''
 import os
+import sys
 from urllib.parse import urlparse
 
 import psycopg2
@@ -11,8 +12,9 @@ import psycopg2
 
 def main():
 
+    url = urlparse(get_env_variable('DATABASE_URL'))
+
     try:
-        url = urlparse(get_env_variable('DATABASE_URL'))
         conn = psycopg2.connect(
             user=url.username,
             password=url.password,
@@ -20,6 +22,14 @@ def main():
             host=url.hostname,
             port=url.port
         )
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("Connection error: ", error)
+        sys.exit(1)
+    else:
+        print(
+            f'Connected to DB {url.path[1:]} on {url.hostname}:{url.port} as user {url.username}.')
+
+    try:
         cur = conn.cursor()
         cur.execute("TRUNCATE dataset CASCADE; \
                      TRUNCATE asv CASCADE; \
@@ -30,7 +40,7 @@ def main():
                      where c.relkind = 'S' and n.nspname = 'public'",)
         cur.close()
         conn.commit()
-        print('\nData have been deleted, and sequences have been reset to 1.')
+        print('Data have been deleted, and sequences have been reset to 1.')
 
     except (Exception, psycopg2.DatabaseError) as error:
         print("Error in transaction. Reverting.", error)
@@ -47,8 +57,9 @@ def get_env_variable(name):
     try:
         return os.environ[name]
     except KeyError:
-        message = "Expected environment variable '{}' not set.".format(name)
-        raise Exception(message)
+        message = f'Expected environment variable {name} not set.'
+        print(message)
+        sys.exit(1)
 
 
 # so that Python files can act as either reusable modules, or as standalone programs

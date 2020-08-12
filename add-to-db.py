@@ -49,6 +49,9 @@ def main():
     emof_file = 'emof.tsv'
     annot_file = 'annotation.tsv'
 
+    # Check env var
+    url = urlparse(get_env_variable('DATABASE_URL'))
+
     # Get TSVs from EXCEL (or comment out to use TSVs directly)
     excel_to_tsv(dir, xl_file)
 
@@ -67,7 +70,6 @@ def main():
 
     # Connect to db
     try:
-        url = urlparse(get_env_variable('DATABASE_URL'))
         conn = psycopg2.connect(
             user=url.username,
             password=url.password,
@@ -75,11 +77,13 @@ def main():
             host=url.hostname,
             port=url.port
         )
-        print(conn)
+        # print(conn)
     except (Exception, psycopg2.OperationalError) as error:
         print("Could not connect to DB.\npsycopg2 message:", error)
         sys.exit()
     else:
+        print(
+            f'Connected to DB {url.path[1:]} on {url.hostname}:{url.port} as user {url.username}.')
         conn.autocommit = False
         cur = conn.cursor()
     try:
@@ -154,8 +158,9 @@ def get_env_variable(name):
     try:
         return os.environ[name]
     except KeyError:
-        message = "Expected environment variable '{}' not set.".format(name)
-        raise Exception(message)
+        message = f'Expected environment variable {name} not set.'
+        print(message)
+        sys.exit(1)
 
 
 def print_tbl(df):
