@@ -203,7 +203,8 @@ def occ_fr_asv_tbl(src, trg):
     excluding zero-obs.
     '''
     df = pd.read_csv(src, delimiter='\t', header='infer')
-    df = df.melt(['asv_id_alias', 'DNA_sequence', 'kingdom', 'phylum', 'class', 'order', 'family',
+    # Unpivot, i.e. make new rows for every sample-asv combination
+    df = df.melt(['asv_id_alias', 'DNA_sequence', 'associatedSequences', 'kingdom', 'phylum', 'class', 'order', 'family',
                   'genus', 'specificEpithet', 'infraspecificEpithet', 'otu'],
                  var_name='event_id_alias',
                  value_name='organismQuantity')
@@ -436,6 +437,8 @@ def prep_annot_df(df, cur):
     df['annotation_algorithm'] = 'RDP'
     df['annotation_confidence'] = [round(random.uniform(0.9, 1.0), 2)
                                    for _ in range(0, len(df.index))]
+    # Avoid using reserved term
+    df.rename(columns={'order': 'oorder'}, inplace=True)
     # df['taxonRemarks'] = 'Unite DOI'
     df = df.drop(columns='asv_sequence')
     return df
