@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 '''
 Code for reading ASV data and metadata in Excel sheets or *.tsv files,
