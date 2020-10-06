@@ -38,7 +38,7 @@ from tabulate import tabulate  # For testing only
 def main():
 
     # Locate user input
-    dir = 'input/large/'
+    dir = 'input/current/'
     # dir = 'input/small'
 
     # EXCEL
@@ -134,6 +134,10 @@ def main():
         # (Modify to only affect specified subset of data later!)
         annot_prep_df = prep_annot_df(annot_df, cur)
         copy_tbl_from_df('taxon_annotation', annot_prep_df, cur)
+
+        print('Updating materialized views.')
+        cur.execute('REFRESH MATERIALIZED VIEW api.app_filter_mixs_tax')
+        cur.execute('REFRESH MATERIALIZED VIEW api.app_search_mixs_tax')
 
         # Commit db changes (only if all SQL above worked)
         print('Committing changes to DB.')
@@ -247,8 +251,14 @@ def get_record_df(file, encoding=None):
 def get_ds_meta():
     '''Will be figured out when data flow USER > BAS-MOL > BIOATLAS is clear
     '''
-    dataset_id = 'SMHI:BalticPicoplankton'
-    provider_email = 'maria.prager@scilifelab.se'
+    # # SMHI
+    # dataset_id = 'SMHI:BalticPicoplankton'
+    # provider_email = 'maria.prager@scilifelab.se'
+
+    # UU-fungi
+    dataset_id = 'UU:2013:PodzolFungiLongRead'
+    provider_email = 'jeanette.tangrot@umu.se'
+
     return [dataset_id, provider_email]
 
 
@@ -416,11 +426,12 @@ def copy_tbl_from_df(tbl, df, cur):
     '''Copies df data, via 'filelike stringIO object', into db tbls.
     Presumably faster than insert, at least for larger dfs'''
     output = StringIO()
+    df = df.fillna(value='None')
     df.to_csv(output, sep='\t', header=False, index=False)
     # Go to top of 'file'
     output.seek(0)
     output.getvalue()
-    cur.copy_from(output, tbl, columns=list(df))
+    cur.copy_from(output, tbl, sep='\t', null='None', columns=list(df))
 
 
 def prep_annot_df(df, cur):
@@ -431,12 +442,22 @@ def prep_annot_df(df, cur):
     df['asv_id'] = df['asv_sequence'].apply(lambda x: 'ASV:' + md5(x))
     # df = df[cols]
     df['status'] = 'valid'
-    df['date_identified'] = '2019-11-01'
+
+    # # SMHI
+    # df['date_identified'] = '2019-11-01'
+    # df['identification_references'] = 'https://bioatlas.github.io/mol-data/ASV/identification-methods'
+    # df['reference_db'] = 'GTDB'
+    # df['annotation_algorithm'] = 'RDP'
+    # df['annotation_confidence'] = [round(random.uniform(0.9, 1.0), 2)
+    #                                for _ in range(0, len(df.index))]
+
+    # UU-fungi
+    df['date_identified'] = '2020-10-06'
     df['identification_references'] = 'https://bioatlas.github.io/mol-data/ASV/identification-methods'
-    df['reference_db'] = 'GTDB'
-    df['annotation_algorithm'] = 'RDP'
-    df['annotation_confidence'] = [round(random.uniform(0.9, 1.0), 2)
-                                   for _ in range(0, len(df.index))]
+    df['reference_db'] = 'UNITE:ITS2'
+    df['annotation_algorithm'] = 'vsearch sintax'
+    df['annotation_confidence'] = 0.8
+
     # Avoid using reserved term
     df.rename(columns={'order': 'oorder'}, inplace=True)
     # df['taxonRemarks'] = 'Unite DOI'
