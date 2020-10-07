@@ -426,12 +426,11 @@ def copy_tbl_from_df(tbl, df, cur):
     '''Copies df data, via 'filelike stringIO object', into db tbls.
     Presumably faster than insert, at least for larger dfs'''
     output = StringIO()
-    df = df.fillna(value='None')
     df.to_csv(output, sep='\t', header=False, index=False)
     # Go to top of 'file'
     output.seek(0)
     output.getvalue()
-    cur.copy_from(output, tbl, sep='\t', null='None', columns=list(df))
+    cur.copy_from(output, tbl, sep='\t', columns=list(df))
 
 
 def prep_annot_df(df, cur):
